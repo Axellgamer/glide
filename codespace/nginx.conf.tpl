@@ -37,6 +37,17 @@ http {
         # Selkies file transfers and clipboard uploads can be large.
         client_max_body_size 0;
 
+        # The console itself, served same-origin so it works on a private port.
+        location = /console {
+            return 301 /console/;
+        }
+
+        location /console/ {
+            alias {{WEB_ROOT}}/;
+            index index.html;
+            add_header Cache-Control "no-store";
+        }
+
         # The console API (status, logs, actions) for the Glide UI.
         location /glide/ {
             proxy_pass http://127.0.0.1:{{CONSOLE_PORT}}/;

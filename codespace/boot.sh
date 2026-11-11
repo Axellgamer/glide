@@ -214,6 +214,7 @@ start_proxy() {
     GLIDE_PROXY_PORT="$GLIDE_PROXY_PORT" \
     GLIDE_SELKIES_PORT="$GLIDE_SELKIES_PORT" \
     GLIDE_CONSOLE_PORT="$GLIDE_CONSOLE_PORT" \
+    GLIDE_WEB_ROOT="$HERE/web" \
     python3 - "$HERE/nginx.conf.tpl" "$GLIDE_NGINX_DIR/nginx.conf" <<'PY'
 import os
 import pathlib
@@ -226,6 +227,7 @@ values = {
     "PROXY_PORT": os.environ["GLIDE_PROXY_PORT"],
     "SELKIES_PORT": os.environ["GLIDE_SELKIES_PORT"],
     "CONSOLE_PORT": os.environ["GLIDE_CONSOLE_PORT"],
+    "WEB_ROOT": os.environ["GLIDE_WEB_ROOT"],
 }
 for key, value in values.items():
     template = template.replace("{{" + key + "}}", value)
