@@ -1,0 +1,266 @@
+#!/usr/bin/env bash
+# Glide Codespace - command line for the streamed Minecraft session.
+#
+#   glide up                 start the whole session (display, stream, game)
+#   glide down               stop everything
+#   glide restart            restart everything
+#   glide restart-game       relaunch Minecraft only
+#   glide restart-stream     restart Selkies only (keeps the game running)
+#   glide status [--json]    what is running right now
+#   glide url                the URL to paste into the Glide web UI
+#   glide logs [name]        tail boot|minecraft|selkies|nginx|console logs
+#   glide profile low|medium|high
+#   glide resize 1280x720    restart the session at a resolution
+#   glide dashboard on|off   show/hide the Selkies sidebar inside the stream
+#   glide save               copy worlds/settings back into Client/
+#   glide env                edit ~/.glide/session.env
+#   glide setup [--force]    (re)provision the codespace
+set -uo pipefail
+
+HERE="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck source=lib.sh
+. "$HERE/lib.sh"
+
+GLIDE_CLI_VERSION="3.0.0"
+
+glide_ensure_dirs
+glide_load_env
+
+boot_detached() {
+  local mode="${1:-all}"
+  GLIDE_BOOT_ACTIVE=1 setsid nohup bash "$HERE/boot.sh" "--$mode" \
+    >/dev/null 2>&1 </dev/null &
+}
+
+stop_component() {
+  local name="$1" pid_file="$GLIDE_RUN_DIR/$1.pid" pid
+  [ -f "$pid_file" ] || return 0
+  pid="$(cat "$pid_file" 2>/dev/null)"
+  if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+    kill -TERM "$pid" 2>/dev/null || true
+    local i
+    for i in $(seq 1 20); do
+      kill -0 "$pid" 2>/dev/null || break
+      sleep 0.2
+    done
+    kill -KILL "$pid" 2>/dev/null || true
+  fi
+  rm -f "$pid_file"
+}
+
+cmd_status() {
+  local json=""
+  [ "${1:-}" = "--json" ] && json="1"
+  if ! glide_port_open "$GLIDE_CONSOLE_PORT" "/status"; then
+    printf 'Glide session is not running.\n'
+    printf 'Start it with: glide up\n'
+    return 0
+  fi
+  local payload
+  payload="$(curl -fsS --max-time 3 "http://127.0.0.1:$GLIDE_CONSOLE_PORT/status" 2>/dev/null)"
+  if [ -n "$json" ]; then
+    if glide_have jq; then
+      printf '%s' "$payload" | jq .
+    else
+      printf '%s\n' "$payload"
+    fi
+    return 0
+  fi
+  if glide_have jq; then
+    printf '%s' "$payload" | jq -r '
+      "Glide " + .app.version,
+      "  stage      " + .stage.label + " (" + .stage.key + ") - " + .stage.detail,
+      "  progress   " + ((.stage.progress * 100) | floor | tostring) + "%",
+      "  minecraft  " + .minecraft.version + " / " + .minecraft.loader + " / " + .minecraft.xmx + " / ready=" + (.minecraft.ready | tostring),
+      "  stream     " + .stream.encoder + " @ " + (.stream.fps | tostring) + "fps, " + (.stream.bitrate | tostring) + " kbps, dashboard=" + (.stream.dashboard | tostring),
+      "  display    " + (.display.width | tostring) + "x" + (.display.height | tostring) + " on " + .display.display,
+      "  uptime     " + (.session.uptime_seconds | tostring) + "s",
+      "  url        " + (.host.public_url | tostring)
+    '
+  else
+    printf '%s\n' "$payload"
+  fi
+}
+
+cmd_url() {
+  local url
+  url="$(glide_public_url)"
+  if [ -n "${GLIDE_WEB_KEY:-}" ]; then
+    printf '%s/#key=%s\n' "$url" "$GLIDE_WEB_KEY"
+  else
+    printf '%s\n' "$url"
+  fi
+}
+
+cmd_profile() {
+  local preset="${1:-medium}"
+  case "$preset" in
+    low) glide_env_set GLIDE_FPS 30; glide_env_set GLIDE_BITRATE 2500 ;;
+    medium) glide_env_set GLIDE_FPS 60; glide_env_set GLIDE_BITRATE 6000 ;;
+    high) glide_env_set GLIDE_FPS 60; glide_env_set GLIDE_BITRATE 12000 ;;
+    *)
+      printf 'usage: glide profile low|medium|high\n' >&2
+      return 2
+      ;;
+  esac
+  glide_log "stream profile set to $preset - restarting the stream"
+  cmd_restart_stream
+}
+
+cmd_restart_stream() {
+  glide_state_stage restarting-stream "Restarting the stream"
+  stop_component selkies
+  boot_detached stream
+  glide_log "stream restarting (the game keeps running)"
+}
+
+cmd_restart_game() {
+  glide_state_stage restarting-game "Restarting Minecraft"
+  boot_detached game
+  glide_log "Minecraft restarting"
+}
+
+cmd_restart() {
+  glide_state_stage restarting-stream "Restarting the session"
+  bash "$HERE/stop.sh"
+  boot_detached all
+  glide_log "session restarting"
+}
+
+cmd_resize() {
+  local value="${1:-}"
+  if ! printf '%s' "$value" | grep -Eq '^[0-9]{3,4}x[0-9]{3,4}$'; then
+    printf 'usage: glide resize 1280x720\n' >&2
+    return 2
+  fi
+  glide_env_set GLIDE_RESOLUTION "$value"
+  glide_log "resolution set to $value - restarting the session"
+  cmd_restart
+}
+
+cmd_dashboard() {
+  local mode="${1:-on}"
+  case "$mode" in
+    on) glide_env_set GLIDE_DASHBOARD true ;;
+    off) glide_env_set GLIDE_DASHBOARD false ;;
+    *)
+      printf 'usage: glide dashboard on|off\n' >&2
+      return 2
+      ;;
+  esac
+  glide_log "stream dashboard: $mode"
+  cmd_restart_stream
+}
+
+cmd_save() {
+  local version="$GLIDE_MINECRAFT_VERSION" loader="$GLIDE_MINECRAFT_LOADER"
+  local dest="$GLIDE_REPO_CLIENT/$version" saved=0
+  mkdir -p "$dest/worlds" "$dest/resourcepacks" "$dest/settings/$loader"
+  if [ -d "$GLIDE_MC/saves" ]; then
+    cp -a "$GLIDE_MC/saves/." "$dest/worlds/" 2>/dev/null && saved=1
+  fi
+  if [ -d "$GLIDE_MC/resourcepacks" ]; then
+    cp -a "$GLIDE_MC/resourcepacks/." "$dest/resourcepacks/" 2>/dev/null && saved=1
+  fi
+  local item
+  for item in config shaderpacks options.txt optionsof.txt servers.dat; do
+    if [ -e "$GLIDE_MC/$item" ]; then
+      cp -a "$GLIDE_MC/$item" "$dest/settings/$loader/" 2>/dev/null && saved=1
+    fi
+  done
+  if [ "$saved" = "1" ]; then
+    glide_log "worlds and settings copied to Client/$version (commit them to keep them)"
+  else
+    glide_log "nothing to save yet"
+  fi
+}
+
+cmd_logs() {
+  local name="${1:-boot}" limit="${2:-200}"
+  local file
+  case "$name" in
+    boot) file="$GLIDE_LOG_DIR/boot.log" ;;
+    minecraft | mc) file="$GLIDE_LOG_DIR/minecraft.log" ;;
+    game | java) file="/tmp/glide-minecraft.log" ;;
+    selkies | stream) file="$GLIDE_LOG_DIR/selkies.log" ;;
+    console) file="$GLIDE_LOG_DIR/console.log" ;;
+    nginx) file="$GLIDE_NGINX_DIR/logs/error.log" ;;
+    setup) file="$GLIDE_LOG_DIR/setup.log" ;;
+    actions) file="$GLIDE_LOG_DIR/actions.log" ;;
+    *)
+      printf 'usage: glide logs boot|minecraft|game|selkies|nginx|console|setup|actions [-f]\n' >&2
+      return 2
+      ;;
+  esac
+  [ -f "$file" ] || {
+    printf 'no log at %s\n' "$file" >&2
+    return 1
+  }
+  tail -n "$limit" -F "$file"
+}
+
+cmd_env() {
+  local editor="${EDITOR:-}"
+  if [ -z "$editor" ]; then
+    if glide_have nano; then editor=nano; elif glide_have vim; then editor=vim; else editor=cat; fi
+  fi
+  "$editor" "$GLIDE_SESSION_ENV"
+  glide_log "saved $GLIDE_SESSION_ENV (run: glide restart)"
+}
+
+usage() {
+  cat <<'TXT'
+glide - the Glide codespace session CLI
+
+  glide up                     start display, stream and Minecraft (background)
+  glide up --wait              same, but keep the boot log in the foreground
+  glide down [--save]          stop the game and every streaming process
+  glide restart                restart everything (needed for a new resolution)
+  glide restart-game           relaunch Minecraft only
+  glide restart-stream         restart Selkies only, keep the game running
+  glide status [--json]        what is running right now
+  glide url                    the URL to paste into the Glide web UI
+  glide logs [name]            tail boot|minecraft|game|selkies|nginx|console
+  glide profile low|medium|high
+  glide resize 1280x720        restart the session at a resolution
+  glide dashboard on|off       show/hide the Selkies sidebar in the stream
+  glide save                   copy worlds/settings back into Client/
+  glide env                    edit ~/.glide/session.env
+  glide setup [--force]        (re)provision the codespace
+  glide version                print versions
+TXT
+}
+
+case "${1:-}" in
+  up)
+    shift
+    if [ "${1:-}" = "--wait" ] || [ "${1:-}" = "-f" ]; then
+      bash "$HERE/boot.sh" --all
+    else
+      bash "$HERE/boot.sh" --detach
+    fi
+    ;;
+  down | stop) shift; bash "$HERE/stop.sh" "${1:-}" ;;
+  restart)
+    shift
+    cmd_restart
+    ;;
+  restart-game) cmd_restart_game ;;
+  restart-stream) cmd_restart_stream ;;
+  status) shift; cmd_status "$@" ;;
+  url) cmd_url ;;
+  logs) shift; cmd_logs "$@" ;;
+  profile) shift; cmd_profile "$@" ;;
+  resize) shift; cmd_resize "$@" ;;
+  dashboard) shift; cmd_dashboard "$@" ;;
+  save) cmd_save ;;
+  env) cmd_env ;;
+  setup) shift; bash "$HERE/setup.sh" "$@" ;;
+  version | --version) printf 'glide %s (selkies %s)\n' "$GLIDE_CLI_VERSION" "$(cat "$GLIDE_HOME/selkies.version" 2>/dev/null || echo unknown)" ;;
+  help | -h | --help | "") usage ;;
+  *)
+    printf 'unknown command: %s\n\n' "$1" >&2
+    usage >&2
+    exit 2
+    ;;
+esac

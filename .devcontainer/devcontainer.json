@@ -1,0 +1,37 @@
+{
+  "name": "Glide — streamed Minecraft",
+  "image": "mcr.microsoft.com/devcontainers/base:ubuntu",
+  "remoteUser": "vscode",
+  "hostRequirements": {
+    "cpus": 2,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
+  "forwardPorts": [6080, 8080, 6081],
+  "portsAttributes": {
+    "6080": {
+      "label": "Glide stream + console",
+      "onAutoForward": "silent",
+      "visibility": "public"
+    },
+    "8080": {
+      "label": "Selkies (internal)",
+      "onAutoForward": "ignore"
+    },
+    "6081": {
+      "label": "Glide console API (internal)",
+      "onAutoForward": "ignore"
+    }
+  },
+  "onCreateCommand": "bash codespace/setup.sh",
+  "postStartCommand": "bash codespace/boot.sh --detach",
+  "postAttachCommand": "bash codespace/glide status",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "terminal.integrated.scrollback": 10000
+      }
+    }
+  }
+}
