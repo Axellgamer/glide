@@ -259,8 +259,7 @@ sync_assets() {
   mkdir -p "$GLIDE_MC/mods" "$GLIDE_MC/resourcepacks" "$GLIDE_MC/shaderpacks" \
     "$GLIDE_MC/saves" "$GLIDE_MC/datapacks"
 
-  # Mods are fully managed by the repo, so clear stale versions first.
-  find "$GLIDE_MC/mods" -mindepth 1 -maxdepth 1 -type f -name '*.jar' -delete 2>/dev/null || true
+  # Repo mods are merged over whatever the portable archive restored.
   if [ -d "$mods_src" ]; then
     find "$mods_src" -maxdepth 1 -type f \( -name '*.jar' -o -name '*.zip' \) \
       -exec cp -f {} "$GLIDE_MC/mods/" \; 2>/dev/null || true
@@ -389,6 +388,9 @@ case "$MODE" in
     start_audio
     start_stream
     start_proxy
+    if declare -F glide_data_pull >/dev/null 2>&1; then
+      glide_data_pull || true
+    fi
     start_game
     ;;
   stream)

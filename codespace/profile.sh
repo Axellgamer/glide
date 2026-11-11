@@ -140,6 +140,9 @@ glide_link_game() {
     0) glide_log "game settings restored" ;;
     2) glide_game_push ;;
   esac
+  if declare -F glide_link_data >/dev/null 2>&1; then
+    glide_link_data
+  fi
   return 0
 }
 
@@ -147,6 +150,10 @@ glide_link_game() {
 # With no key: paste an existing key, or press Enter to generate one.
 glide_profile_link() {
   local key="${1:-}" new=0 rc
+  if glide_pid_alive "$GLIDE_RUN_DIR/minecraft.pid"; then
+    printf 'Stop the game first (menu 2), then run link again so worlds/mods cannot be overwritten.\n' >&2
+    return 2
+  fi
   if [ -z "$key" ]; then
     if [ ! -t 0 ]; then
       glide_log "linking needs a terminal; run: glide link <key>"
@@ -172,6 +179,7 @@ glide_profile_link() {
   if [ "$new" = "1" ]; then
     glide_profile_sync
     glide_game_push
+    declare -F glide_data_push >/dev/null 2>&1 && glide_data_push
     printf '\nYour sync key (save it now):\n\n  %s\n\n' "$key"
     printf 'On another account/codespace: Glide: Link profile, then paste this key.\n'
     glide_log "new sync key created; current settings uploaded"

@@ -40,6 +40,9 @@ pkill -u "$(id -u)" -KILL -f "net.minecraft.client.main.Main" >/dev/null 2>&1 ||
 if declare -F glide_game_push >/dev/null 2>&1; then
   glide_game_push
 fi
+if declare -F glide_data_push >/dev/null 2>&1; then
+  glide_data_push
+fi
 
 # 2. Streaming stack.
 kill_pidfile selkies

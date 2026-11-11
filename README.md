@@ -124,3 +124,23 @@ ID. Selkies passwords, Microsoft tokens, logs and world data are never uploaded.
 So after switching a GitHub account: Create the codespace, run **Glide: Link profile**
 with the same passphrase, and both the profile and the game settings come back. Restart
 the game once if it was already running when you linked.
+
+
+### 8. Worlds, mods and packs in the portable store
+
+The larger data now follows the same sync key:
+
+- Archive contents: `saves/` (worlds), `mods/`, `resourcepacks/`, `shaderpacks/`.
+  Together with the game-settings archive (options, servers, config) this covers the whole
+  gameplay state except versions/libraries/assets/logs.
+- Pulled on a full session start (`glide up` / boot all) and when linking a key.
+- Pushed on **Stop**, before a restart is not needed (it uses the live files), and by
+  `glide sync` / `glide save`.
+- Requires `glide link`; unlinked data stays in the codespace.
+- Stop the game before linking, otherwise link refuses so worlds/mods cannot be
+  overwritten.
+- Limits: the Worker chunks archives at 24 MB with a **40 MB per-archive cap**. Cloudflare
+  KV gives 1 GB total and about 1,000 writes/day on the free plan, so ~100 users fit when
+  worlds are small; large worlds/modpacks need R2 (enable it in the Cloudflare dashboard)
+  or a paid limit.
+- Nothing is committed to the fork and no GitHub token is used.
