@@ -75,6 +75,45 @@ glide_profile_export() {
 # Commit the profile to the user's fork through the GitHub Contents API, using
 # the Codespaces GITHUB_TOKEN. If no token/repo is available (local shell), the
 # file is still written and the caller can commit it normally.
+glide_profile_repo() {
+  local repo="${GITHUB_REPOSITORY:-}"
+  if [ -z "$repo" ]; then
+    repo="$(git -C "$GLIDE_ROOT" remote get-url origin 2>/dev/null \
+      | sed -E 's#.*github\.com[:/]([^/]+/[^/.]+)(\.git)?$#\1#')"
+  fi
+  printf '%s' "$repo"
+}
+
+glide_profile_branch() {
+  local branch="${GITHUB_REF_NAME:-}"
+  if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
+    branch="$(git -C "$GLIDE_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null)"
+  fi
+  printf '%s' "$branch"
+}
+
+# Pull the profile from the fork on boot so a resumed codespace sees settings
+# saved by another one. Never fatal.
+glide_profile_pull() {
+  mkdir -p "$(dirname "$GLIDE_PROFILE_FILE")"
+  [ -f "$GLIDE_PROFILE_FILE" ] || : >"$GLIDE_PROFILE_FILE"
+  if [ -z "${GITHUB_TOKEN:-}" ] && [ -z "${GH_TOKEN:-}" ]; then
+    return 0
+  fi
+  local repo branch output
+  repo="$(glide_profile_repo)"
+  branch="$(glide_profile_branch)"
+  [ -n "$repo" ] && [ -n "$branch" ] || return 0
+  output="$(GLIDE_PROFILE_REPO="$repo" GLIDE_PROFILE_BRANCH="$branch" \
+    python3 "$GLIDE_ROOT/codespace/profile_fetch.py" "$GLIDE_PROFILE_FILE" 2>&1)"
+  case "$output" in
+    updated) glide_log "profile pulled from $repo@$branch" ;;
+    missing | unchanged | "") ;;
+    *) glide_log "profile pull: $output" ;;
+  esac
+  return 0
+}
+
 glide_profile_sync() {
   local reason="${1:-settings}" repo branch output
   glide_profile_export
@@ -82,15 +121,8 @@ glide_profile_sync() {
     glide_log "profile written to .glide/profile.env (no GITHUB_TOKEN; commit it manually)"
     return 0
   fi
-  repo="${GITHUB_REPOSITORY:-}"
-  if [ -z "$repo" ]; then
-    repo="$(git -C "$GLIDE_ROOT" remote get-url origin 2>/dev/null \
-      | sed -E 's#.*github\.com[:/]([^/]+/[^/.]+)(\.git)?$#\1#')"
-  fi
-  branch="${GITHUB_REF_NAME:-}"
-  if [ -z "$branch" ] || [ "$branch" = "HEAD" ]; then
-    branch="$(git -C "$GLIDE_ROOT" rev-parse --abbrev-ref HEAD 2>/dev/null)"
-  fi
+  repo="$(glide_profile_repo)"
+  branch="$(glide_profile_branch)"
   if [ -z "$repo" ] || [ -z "$branch" ]; then
     glide_log "profile written to .glide/profile.env (no repository/branch; commit it manually)"
     return 0

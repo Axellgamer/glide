@@ -34,6 +34,9 @@ done
 FORCE="${FORCE:-0}"
 
 glide_ensure_dirs
+if declare -F glide_profile_pull >/dev/null 2>&1; then
+  glide_profile_pull
+fi
 glide_load_env
 
 BOOT_LOG="$GLIDE_LOG_DIR/boot.log"
