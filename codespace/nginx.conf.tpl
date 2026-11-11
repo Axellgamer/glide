@@ -1,7 +1,6 @@
 # Glide Codespace - nginx template rendered by codespace/boot.sh
-# Public port {{PROXY_PORT}} -> Selkies {{SELKIES_PORT}} (with HTTP basic auth
-# injected, so the browser inside the Glide UI never sees a login prompt) and
-# -> Glide console API {{CONSOLE_PORT}} under /glide/.
+# Private port {{PROXY_PORT}} -> Selkies {{SELKIES_PORT}}, with HTTP basic auth
+# injected so the stream URL never shows a browser login prompt.
 
 worker_processes 1;
 pid {{NGINX_HOME}}/nginx.pid;
@@ -19,7 +18,6 @@ http {
     keepalive_timeout 65;
     server_tokens off;
 
-    # nginx runs unprivileged here, so every temp path lives under ~/.glide.
     client_body_temp_path {{NGINX_HOME}}/tmp/client;
     proxy_temp_path {{NGINX_HOME}}/tmp/proxy;
     fastcgi_temp_path {{NGINX_HOME}}/tmp/fastcgi;
@@ -34,32 +32,14 @@ http {
     server {
         listen {{PROXY_PORT}};
         server_name _;
-        # Selkies file transfers and clipboard uploads can be large.
-        client_max_body_size 0;
 
-        # The console itself, served same-origin so it works on a private port.
-        location = /console {
-            return 301 /console/;
+        # Liveness used by boot.sh; no auth, no upstream.
+        location = /healthz {
+            add_header Content-Type text/plain;
+            return 200 'ok';
         }
 
-        location /console/ {
-            alias {{WEB_ROOT}}/;
-            index index.html;
-            add_header Cache-Control "no-store";
-        }
-
-        # The console API (status, logs, actions) for the Glide UI.
-        location /glide/ {
-            proxy_pass http://127.0.0.1:{{CONSOLE_PORT}}/;
-            proxy_http_version 1.1;
-            proxy_set_header Host $host;
-            proxy_set_header X-Real-IP $remote_addr;
-            proxy_set_header X-Forwarded-Proto $scheme;
-            proxy_read_timeout 60s;
-            proxy_buffering off;
-        }
-
-        # The stream itself: Selkies HTML + /api/websockets.
+        # Selkies HTML + /api/websockets.
         location / {
             proxy_pass http://127.0.0.1:{{SELKIES_PORT}};
             proxy_http_version 1.1;
@@ -71,14 +51,11 @@ http {
             proxy_set_header X-Forwarded-Proto $scheme;
             proxy_set_header Authorization "Basic {{AUTH_B64}}";
 
-            # Streaming sessions are long lived and must not be buffered.
             proxy_buffering off;
             proxy_request_buffering off;
             proxy_read_timeout 3600s;
             proxy_send_timeout 3600s;
             proxy_max_temp_file_size 0;
-
-            # Selkies is framed inside the Glide UI; its own CSP governs that.
             proxy_hide_header X-Frame-Options;
         }
     }

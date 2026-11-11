@@ -43,7 +43,6 @@ kill_pidfile selkies
 if [ -f "$GLIDE_NGINX_DIR/nginx.conf" ] && glide_have nginx; then
   nginx -p "$GLIDE_NGINX_DIR" -c "$GLIDE_NGINX_DIR/nginx.conf" -s quit >/dev/null 2>&1 || true
 fi
-kill_pidfile console
 
 # 3. Window manager and display.
 kill_pidfile dwm

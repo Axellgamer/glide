@@ -2,8 +2,8 @@
 # Glide Codespace - session boot.
 #
 # Starts, in order: virtual display -> audio -> Selkies -> nginx proxy ->
-# console API -> Minecraft. Every step is idempotent, so running it again only
-# starts whatever is missing.
+# Minecraft. Every step is idempotent, so running it again only starts whatever
+# is missing.
 #
 #   bash codespace/boot.sh            # everything
 #   bash codespace/boot.sh --stream   # display/audio/stream/proxy only
@@ -213,8 +213,6 @@ start_proxy() {
     GLIDE_AUTH_B64="$auth" \
     GLIDE_PROXY_PORT="$GLIDE_PROXY_PORT" \
     GLIDE_SELKIES_PORT="$GLIDE_SELKIES_PORT" \
-    GLIDE_CONSOLE_PORT="$GLIDE_CONSOLE_PORT" \
-    GLIDE_WEB_ROOT="$HERE/web" \
     python3 - "$HERE/nginx.conf.tpl" "$GLIDE_NGINX_DIR/nginx.conf" <<'PY'
 import os
 import pathlib
@@ -226,8 +224,6 @@ values = {
     "AUTH_B64": os.environ["GLIDE_AUTH_B64"],
     "PROXY_PORT": os.environ["GLIDE_PROXY_PORT"],
     "SELKIES_PORT": os.environ["GLIDE_SELKIES_PORT"],
-    "CONSOLE_PORT": os.environ["GLIDE_CONSOLE_PORT"],
-    "WEB_ROOT": os.environ["GLIDE_WEB_ROOT"],
 }
 for key, value in values.items():
     template = template.replace("{{" + key + "}}", value)
@@ -239,30 +235,12 @@ PY
   nginx -p "$GLIDE_NGINX_DIR" -c "$GLIDE_NGINX_DIR/nginx.conf"
   local i
   for i in $(seq 1 30); do
-    glide_port_open "$GLIDE_PROXY_PORT" "/" && break
+    glide_port_open "$GLIDE_PROXY_PORT" "/healthz" && break
     sleep 0.5
   done
-  glide_port_open "$GLIDE_PROXY_PORT" "/" \
+  glide_port_open "$GLIDE_PROXY_PORT" "/healthz" \
     || die_tail "proxy did not answer on :$GLIDE_PROXY_PORT" "$GLIDE_NGINX_DIR/logs/error.log"
   glide_log "proxy ready on :$GLIDE_PROXY_PORT -> :$GLIDE_SELKIES_PORT"
-}
-
-# ----------------------------------------------------------------- console ---
-start_console() {
-  if glide_port_open "$GLIDE_CONSOLE_PORT" "/status"; then
-    glide_log "console already up on :$GLIDE_CONSOLE_PORT"
-    return 0
-  fi
-  setsid nohup python3 "$HERE/console.py" >"$GLIDE_LOG_DIR/console.log" 2>&1 </dev/null &
-  echo $! >"$GLIDE_RUN_DIR/console.pid"
-  local i
-  for i in $(seq 1 20); do
-    glide_port_open "$GLIDE_CONSOLE_PORT" "/status" && break
-    sleep 0.5
-  done
-  glide_port_open "$GLIDE_CONSOLE_PORT" "/status" \
-    || die_tail "console API did not start" "$GLIDE_LOG_DIR/console.log"
-  glide_log "console API ready on 127.0.0.1:$GLIDE_CONSOLE_PORT"
 }
 
 # -------------------------------------------------------------------- game ---
@@ -396,7 +374,6 @@ case "$MODE" in
     start_audio
     start_stream
     start_proxy
-    start_console
     start_game
     ;;
   stream)
@@ -404,7 +381,6 @@ case "$MODE" in
     start_audio
     start_stream
     start_proxy
-    start_console
     glide_state_set STAGE stream-ready DETAIL "Stream is live, waiting for Minecraft"
     ;;
   game)

@@ -7,25 +7,17 @@
     "memory": "8gb",
     "storage": "32gb"
   },
-  "forwardPorts": [6080, 8080, 6081],
+  "forwardPorts": [6080],
   "portsAttributes": {
     "6080": {
-      "label": "Glide console + stream (private)",
+      "label": "Glide stream (private)",
       "onAutoForward": "silent",
       "visibility": "private"
-    },
-    "8080": {
-      "label": "Selkies (internal)",
-      "onAutoForward": "ignore"
-    },
-    "6081": {
-      "label": "Glide console API (internal)",
-      "onAutoForward": "ignore"
     }
   },
   "onCreateCommand": "bash codespace/setup.sh",
   "postStartCommand": "bash codespace/boot.sh --detach",
-  "postAttachCommand": "bash codespace/glide status",
+  "postAttachCommand": "bash codespace/menu.sh",
   "customizations": {
     "vscode": {
       "settings": {

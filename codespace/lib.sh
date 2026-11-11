@@ -18,10 +18,9 @@ export GLIDE_SESSION_ENV="$GLIDE_HOME/session.env"
 export GLIDE_STATE_FILE="$GLIDE_HOME/state.env"
 export GLIDE_REPO_CLIENT="$GLIDE_ROOT/Client"
 
-# Ports. 6080 stays private; the console opens the stream in a signed-in tab.
+# Ports. 6080 stays private; open it from the signed-in github.dev session.
 export GLIDE_PROXY_PORT="${GLIDE_PROXY_PORT:-6080}"
 export GLIDE_SELKIES_PORT="${GLIDE_SELKIES_PORT:-8080}"
-export GLIDE_CONSOLE_PORT="${GLIDE_CONSOLE_PORT:-6081}"
 
 # Display / audio.
 export GLIDE_DISPLAY="${GLIDE_DISPLAY:-:99}"
@@ -104,8 +103,6 @@ GLIDE_ENCODER=$GLIDE_DEFAULTS_ENCODER
 GLIDE_AUDIO=true
 # true = show the Selkies dashboard sidebar inside the stream, false = clean video
 GLIDE_DASHBOARD=true
-# Optional shared secret for the console control API (empty = URL is the secret)
-GLIDE_WEB_KEY=
 
 # --- Generated, do not edit --------------------------------------------------
 GLIDE_SELKIES_PASSWORD=$(glide_random 18)
@@ -127,7 +124,6 @@ glide_load_env() {
   : "${GLIDE_ENCODER:=$GLIDE_DEFAULTS_ENCODER}"
   : "${GLIDE_AUDIO:=true}"
   : "${GLIDE_DASHBOARD:=true}"
-  : "${GLIDE_WEB_KEY:=}"
   : "${GLIDE_AUTH_MODE:=offline}"
   : "${GLIDE_OFFLINE_USERNAME:=GlidePlayer}"
   : "${GLIDE_MAX_RESTARTS:=3}"
@@ -140,7 +136,7 @@ glide_load_env() {
   fi
   export GLIDE_MINECRAFT_VERSION GLIDE_MINECRAFT_LOADER GLIDE_MINECRAFT_XMX
   export GLIDE_RESOLUTION GLIDE_FPS GLIDE_BITRATE GLIDE_ENCODER GLIDE_AUDIO
-  export GLIDE_DASHBOARD GLIDE_WEB_KEY GLIDE_AUTH_MODE GLIDE_OFFLINE_USERNAME
+  export GLIDE_DASHBOARD GLIDE_AUTH_MODE GLIDE_OFFLINE_USERNAME
   export GLIDE_MAX_RESTARTS GLIDE_RENDERER GLIDE_SELKIES_PASSWORD
   export GLIDE_SKIN_MODEL GLIDE_MICROSOFT_CLIENT_ID
   if ! printf '%s' "$GLIDE_RESOLUTION" | grep -Eq '^[0-9]{2,5}x[0-9]{2,5}$'; then
@@ -164,7 +160,7 @@ glide_env_set() {
 }
 
 # --- state file --------------------------------------------------------------
-# A tiny key=value file the console daemon reads. Values are single line.
+# A tiny key=value file read by the CLI and the menu. Values are single line.
 glide_state_set() {
   # glide_state_set KEY VALUE [KEY VALUE ...]
   local tmp="$GLIDE_STATE_FILE.tmp" key value

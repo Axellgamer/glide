@@ -1,0 +1,108 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Glide: Menu",
+      "type": "shell",
+      "command": "bash codespace/menu.sh",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Start session",
+      "type": "shell",
+      "command": "bash codespace/boot.sh --detach",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Stop session",
+      "type": "shell",
+      "command": "bash codespace/glide down",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Restart game",
+      "type": "shell",
+      "command": "bash codespace/glide restart-game",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Restart stream",
+      "type": "shell",
+      "command": "bash codespace/glide restart-stream",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Restart everything",
+      "type": "shell",
+      "command": "bash codespace/glide restart",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Status / stream URL",
+      "type": "shell",
+      "command": "bash codespace/glide status",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Switch installation",
+      "type": "shell",
+      "command": "bash codespace/glide install ${input:mcVersion} ${input:mcLoader} ${input:mcHeap}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Stream profile",
+      "type": "shell",
+      "command": "bash codespace/glide profile ${input:profile}",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Logs (launcher)",
+      "type": "shell",
+      "command": "bash codespace/glide logs minecraft",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Logs (java)",
+      "type": "shell",
+      "command": "bash codespace/glide logs game",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Edit session.env",
+      "type": "shell",
+      "command": "code -r $HOME/.glide/session.env",
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "mcVersion",
+      "type": "promptString",
+      "description": "Minecraft version (e.g. 1.21.5)",
+      "default": "1.21.5"
+    },
+    {
+      "id": "mcLoader",
+      "type": "pickString",
+      "description": "Loader",
+      "options": ["fabric", "vanilla", "forge", "quilt", "neoforge", "legacy-fabric", "legacy-forge"],
+      "default": "fabric"
+    },
+    {
+      "id": "mcHeap",
+      "type": "pickString",
+      "description": "Heap",
+      "options": ["2G", "3G", "4G", "6G", "8G"],
+      "default": "4G"
+    },
+    {
+      "id": "profile",
+      "type": "pickString",
+      "description": "Stream profile",
+      "options": ["low", "medium", "high"],
+      "default": "medium"
+    }
+  ]
+}
