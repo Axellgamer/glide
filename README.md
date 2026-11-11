@@ -19,13 +19,13 @@ STREAMED MINECRAFT CLIENT OUT OF YOUR OWN GITHUB CODESPACES! NO FRONTEND SINCE G
    **Private**; the URL works while you are signed in. Do not make it public and do not
    share it.
 
-The Explorer on the left is the file manager:
+Explorer is treated as file manager:
 
-- repository files, launcher and runtime: the repo root
-- mods: `Client/mods/<version>/<loader>/`
-- resource packs: `Client/<version>/resourcepacks/`
-- Minecraft data (worlds, options): `~/.glide/minecraft/`
-- logs: `~/.glide/logs/`
+- Root
+- Mods: `Client/mods/<version>/<loader>/`
+- Resource Packs: `Client/<version>/resourcepacks/`
+- Minecraft Data: `~/.glide/minecraft/`
+- Logs: `~/.glide/logs/`
 
 ## Commands
 
@@ -48,23 +48,6 @@ The menu is the interface; the CLI underneath is available if you prefer the ter
 | `glide save` | Copy worlds/settings back into `Client/` |
 | `glide env` | Edit `~/.glide/session.env` |
 
-## What runs
-
-```
-.devcontainer/         provisioning, private port 6080, boot on start, menu on attach
-.vscode/tasks.json     Glide tasks (menu, start/stop, installation, logs)
-codespace/setup.sh     apt deps, Temurin 8+21, launcher venv, Selkies
-codespace/boot.sh      Xvfb → PulseAudio → Selkies → nginx → Minecraft
-codespace/menu.sh      interactive launcher for github.dev terminals
-codespace/glide        CLI used by the menu and tasks
-codespace/nginx.conf.tpl   private 6080 → Selkies 8080 with injected basic auth
-Client/scripts/        Minecraft launcher (minecraft-launcher-lib)
-Client/mods/<version>/<loader>/   mods
-```
-
-State lives in `~/.glide` (`session.env`, `state.env`, logs, Minecraft data, generated
-Selkies credentials) and survives codespace stop/start.
-
 ## Tips
 
 - Codespaces have no GPU, low profile is strongly recommended. 
@@ -75,16 +58,11 @@ Selkies credentials) and survives codespace stop/start.
 ## How the entire thing works
 
 ```
-YOUR BROWSER (signed in to GitHub)
-  └─ https://<codespace>-6080.app.github.dev        private forwarded port
-       └─ nginx :6080                               injects the Selkies login
+YOUR BROWSER
+  └─ https://Codespace-6080.app.github.dev          
+       └─ nginx :6080                               
             ├─ /       → Selkies :8080  →  Xvfb :99  →  Minecraft window
             └─ /healthz → 200 for boot checks
-
-GITHUB.DEV (VS Code in the codespace)
-  ├─ Explorer        the file manager (Client/, ~/.glide/)
-  ├─ terminal menu   codespace/menu.sh
-  └─ tasks           .vscode/tasks.json
 ```
 
 ### 1. Provision and boot
@@ -130,11 +108,7 @@ GITHUB.DEV (VS Code in the codespace)
 
 ### 4. Settings that follow you
 
-Two layers keep version/loader/heap/stream/account settings:
-
-1. **The fork** — `.glide/profile.env` is committed to your fork. A new codespace on the
-   same account clones it and boots with your last settings automatically.
-2. **The portable store** — a passphrase-keyed Cloudflare KV entry (`glide link`). The key
+-  A passphrase-keyed Cloudflare KV entry (`glide link`). The key
    is `sha256("glide-profile-v1:" + passphrase)`; the passphrase is never stored anywhere.
    This is what survives **switching GitHub accounts**: on the new account/codespace, run
    the **Glide: Link profile (switch accounts)** task (or menu `l`, or `glide link`) with
@@ -147,49 +121,6 @@ remains). Only non-secret settings are stored: version, loader, heap, resolution
 fps/bitrate/encoder, dashboard/audio, auth mode, username and the public Microsoft client
 ID. Selkies passwords, Microsoft tokens, logs and world data are never uploaded.
 
-### 5. Nothing else is involved
-
-No web frontend, no GitHub token, no GitHub Actions, no public port, no tunnel, no
-container outside the codespace, and no local install on the user's computer. The only
-external service is the small settings KV store for cross-account profiles.
-
-
-
-### 6. Game settings
-
-The small Minecraft settings also follow you, separately from the profile:
-
-- Included in a `.tar.gz`: `options.txt`, `optionsof.txt`, `optionsshaders.txt`,
-  `servers.dat` and `config/`. **Not** included: worlds, resource packs, shader packs,
-  screenshots, logs or mods (those are repo/workspace files).
-- Stored in the same passphrase-keyed Cloudflare KV entry under `/v1/game/<key>`.
-- Pulled and extracted before every game launch; pushed after **Stop**, before a game
-  restart, and by `glide sync` / `glide save`.
-- Requires `glide link` (the same passphrase). Without linking, game settings stay in the
-  codespace only.
-- They are **not** committed to the fork, so server addresses and mod configs never land
-  in a public repository.
-
-So after switching a GitHub account: create the codespace, run **Glide: Link profile**
+So after switching a GitHub account: Create the codespace, run **Glide: Link profile**
 with the same passphrase, and both the profile and the game settings come back. Restart
 the game once if it was already running when you linked.
-
-
-
-## Update: no GitHub account store (random sync key)
-
-This supersedes the fork layer and passphrase wording above.
-
-- Settings are **not** committed to the fork anymore. `.glide/profile.env` is only a local
-  cache inside the codespace.
-- `glide link` with no key generates a random 256-bit sync key, uploads the current profile
-  and game settings, and prints the key once. Save it.
-- On another GitHub account or a new codespace: run **Glide: Link profile** (or
-  `glide link <key>`) and paste that key. It pulls the profile and the game settings.
-- `glide key` prints the current key; `glide unlink` forgets it.
-- The Worker is a Cloudflare KV store: one profile entry and one game-settings entry per
-  key. Free KV allows roughly 1,000 writes/day and 100,000 reads/day, so ~100 users doing
-  a few syncs each per day fit; heavy use needs a paid limit or a larger store.
-- Losing the key means losing remote access to those settings; the local codespace copy
-  still exists. There is no account recovery by design.
-
