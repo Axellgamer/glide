@@ -56,14 +56,22 @@ def main() -> int:
 
     for attempt in range(2):
         sha = None
+        existing = None
         try:
             status, payload = request("GET", f"{url}?ref={urllib.parse.quote(branch)}", token)
             if status == 200:
                 sha = payload.get("sha")
+                try:
+                    existing = base64.b64decode(payload.get("content", "")).decode("utf-8")
+                except (ValueError, UnicodeDecodeError):
+                    existing = None
         except urllib.error.HTTPError as error:
             if error.code != 404:
                 print(f"GET {error.code}: {error.read()[:200]!r}", file=sys.stderr)
                 return 1
+        if existing == text:
+            print("profile unchanged")
+            return 0
         body = {
             "message": f"Glide profile: {reason}",
             "content": encoded,

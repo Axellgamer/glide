@@ -58,12 +58,6 @@
       "problemMatcher": []
     },
     {
-      "label": "Glide: Edit profile (.glide/profile.env)",
-      "type": "shell",
-      "command": "code -r .glide/profile.env",
-      "problemMatcher": []
-    },
-    {
       "label": "Glide: Switch installation",
       "type": "shell",
       "command": "bash codespace/glide install ${input:mcVersion} ${input:mcLoader} ${input:mcHeap}",
