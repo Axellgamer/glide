@@ -13,8 +13,10 @@
 #   glide profile low|medium|high
 #   glide resize 1280x720        restart the session at a resolution
 #   glide dashboard on|off       show/hide the Selkies sidebar
-#   glide sync                   save the profile to your fork
-  glide save                   copy worlds/settings back into Client/
+#   glide link                   link a passphrase profile (survives account switches)
+#   glide unlink                 remove the portable profile key
+#   glide sync                   save the profile (portable store + fork)
+#   glide save                   copy worlds/settings back into Client/
 #   glide env                    edit ~/.glide/session.env
 #   glide setup [--force]        (re)provision the codespace
 set -uo pipefail
@@ -84,6 +86,11 @@ cmd_status() {
     fi
   done
   printf '\n'
+  if glide_profile_linked; then
+    printf '  profile    portable store + fork\n'
+  else
+    printf '  profile    fork only (run: glide link to sync across accounts)\n'
+  fi
   printf '  logs       %s\n' "$GLIDE_LOG_DIR"
   printf '  port       keep 6080 private; open it from github.dev or a signed-in tab\n'
 }
@@ -244,6 +251,14 @@ cmd_sync() {
   glide_log "profile synced"
 }
 
+cmd_link() {
+  glide_profile_link
+}
+
+cmd_unlink() {
+  glide_profile_unlink
+}
+
 cmd_env() {
   local editor="${EDITOR:-}"
   if [ -z "$editor" ]; then
@@ -274,7 +289,9 @@ glide - the Glide codespace session CLI
   glide profile low|medium|high
   glide resize 1280x720        restart the session at a resolution
   glide dashboard on|off       show/hide the Selkies sidebar
-  glide sync                   save the profile to your fork
+  glide link                   link a passphrase profile (survives account switches)
+  glide unlink                 remove the portable profile key
+  glide sync                   save the profile (portable store + fork)
   glide save                   copy worlds/settings back into Client/
   glide env                    edit ~/.glide/session.env
   glide setup [--force]        (re)provision the codespace
@@ -302,6 +319,8 @@ case "${1:-}" in
   resize) shift; cmd_resize "$@" ;;
   dashboard) shift; cmd_dashboard "$@" ;;
   sync) cmd_sync ;;
+  link) cmd_link ;;
+  unlink) cmd_unlink ;;
   save) cmd_save ;;
   env) cmd_env ;;
   setup) shift; bash "$HERE/setup.sh" "$@" ;;

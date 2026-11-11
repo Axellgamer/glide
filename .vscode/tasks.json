@@ -58,6 +58,18 @@
       "problemMatcher": []
     },
     {
+      "label": "Glide: Link profile (switch accounts)",
+      "type": "shell",
+      "command": "bash codespace/glide link",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Unlink portable profile",
+      "type": "shell",
+      "command": "bash codespace/glide unlink",
+      "problemMatcher": []
+    },
+    {
       "label": "Glide: Switch installation",
       "type": "shell",
       "command": "bash codespace/glide install ${input:mcVersion} ${input:mcLoader} ${input:mcHeap}",
