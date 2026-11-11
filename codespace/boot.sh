@@ -243,7 +243,6 @@ PY
   glide_port_open "$GLIDE_PROXY_PORT" "/" \
     || die_tail "proxy did not answer on :$GLIDE_PROXY_PORT" "$GLIDE_NGINX_DIR/logs/error.log"
   glide_log "proxy ready on :$GLIDE_PROXY_PORT -> :$GLIDE_SELKIES_PORT"
-  glide_ensure_public_port
 }
 
 # ----------------------------------------------------------------- console ---

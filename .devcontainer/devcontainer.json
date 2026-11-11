@@ -10,9 +10,9 @@
   "forwardPorts": [6080, 8080, 6081],
   "portsAttributes": {
     "6080": {
-      "label": "Glide stream + console",
+      "label": "Glide console + stream (private)",
       "onAutoForward": "silent",
-      "visibility": "public"
+      "visibility": "private"
     },
     "8080": {
       "label": "Selkies (internal)",

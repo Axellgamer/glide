@@ -18,7 +18,7 @@ export GLIDE_SESSION_ENV="$GLIDE_HOME/session.env"
 export GLIDE_STATE_FILE="$GLIDE_HOME/state.env"
 export GLIDE_REPO_CLIENT="$GLIDE_ROOT/Client"
 
-# Ports. 6080 is the only port that has to be public on the codespace.
+# Ports. 6080 stays private; the console opens the stream in a signed-in tab.
 export GLIDE_PROXY_PORT="${GLIDE_PROXY_PORT:-6080}"
 export GLIDE_SELKIES_PORT="${GLIDE_SELKIES_PORT:-8080}"
 export GLIDE_CONSOLE_PORT="${GLIDE_CONSOLE_PORT:-6081}"
@@ -229,15 +229,4 @@ glide_selkies_bin() {
   fi
 }
 
-glide_ensure_public_port() {
-  # Best effort: ask the GitHub CLI to make the gateway public. Inside a
-  # codespace gh is usually authenticated already; failure is not fatal.
-  [ -n "${CODESPACE_NAME:-}" ] || return 0
-  glide_have gh || return 0
-  gh codespace ports visibility "${GLIDE_PROXY_PORT}:public" -c "$CODESPACE_NAME" >/dev/null 2>&1 || true
-  return 0
-}
 
-glide_public_port_hint() {
-  printf 'gh codespace ports visibility %s:public -c "$CODESPACE_NAME"' "$GLIDE_PROXY_PORT"
-}
