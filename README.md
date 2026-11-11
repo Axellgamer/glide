@@ -174,3 +174,22 @@ So after switching a GitHub account: create the codespace, run **Glide: Link pro
 with the same passphrase, and both the profile and the game settings come back. Restart
 the game once if it was already running when you linked.
 
+
+
+## Update: no GitHub account store (random sync key)
+
+This supersedes the fork layer and passphrase wording above.
+
+- Settings are **not** committed to the fork anymore. `.glide/profile.env` is only a local
+  cache inside the codespace.
+- `glide link` with no key generates a random 256-bit sync key, uploads the current profile
+  and game settings, and prints the key once. Save it.
+- On another GitHub account or a new codespace: run **Glide: Link profile** (or
+  `glide link <key>`) and paste that key. It pulls the profile and the game settings.
+- `glide key` prints the current key; `glide unlink` forgets it.
+- The Worker is a Cloudflare KV store: one profile entry and one game-settings entry per
+  key. Free KV allows roughly 1,000 writes/day and 100,000 reads/day, so ~100 users doing
+  a few syncs each per day fit; heavy use needs a paid limit or a larger store.
+- Losing the key means losing remote access to those settings; the local codespace copy
+  still exists. There is no account recovery by design.
+

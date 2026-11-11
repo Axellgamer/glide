@@ -13,9 +13,10 @@
 #   glide profile low|medium|high
 #   glide resize 1280x720        restart the session at a resolution
 #   glide dashboard on|off       show/hide the Selkies sidebar
-#   glide link                   link a passphrase profile (survives account switches)
-#   glide unlink                 remove the portable profile key
-#   glide sync                   save the profile (portable store + fork)
+#   glide link [key]             create or use a sync key (survives account switches)
+#   glide key                    print the current sync key
+#   glide unlink                 forget the sync key
+#   glide sync                   save profile + game settings to the store
 #   glide save                   copy worlds/settings back into Client/
 #   glide env                    edit ~/.glide/session.env
 #   glide setup [--force]        (re)provision the codespace
@@ -87,9 +88,9 @@ cmd_status() {
   done
   printf '\n'
   if glide_profile_linked; then
-    printf '  profile    portable store + fork\n'
+    printf '  profile    portable store (linked)\n'
   else
-    printf '  profile    fork only (run: glide link to sync across accounts)\n'
+    printf '  profile    local only (run: glide link to get a sync key)\n'
   fi
   printf '  logs       %s\n' "$GLIDE_LOG_DIR"
   printf '  port       keep 6080 private; open it from github.dev or a signed-in tab\n'
@@ -254,7 +255,11 @@ cmd_sync() {
 }
 
 cmd_link() {
-  glide_profile_link
+  glide_profile_link "$@"
+}
+
+cmd_key() {
+  glide_profile_show_key
 }
 
 cmd_unlink() {
@@ -291,9 +296,10 @@ glide - the Glide codespace session CLI
   glide profile low|medium|high
   glide resize 1280x720        restart the session at a resolution
   glide dashboard on|off       show/hide the Selkies sidebar
-  glide link                   link a passphrase profile (survives account switches)
-  glide unlink                 remove the portable profile key
-  glide sync                   save the profile (portable store + fork)
+  glide link [key]             create or use a sync key (survives account switches)
+  glide key                    print the current sync key
+  glide unlink                 forget the sync key
+  glide sync                   save profile + game settings to the store
   glide save                   copy worlds/settings back into Client/
   glide env                    edit ~/.glide/session.env
   glide setup [--force]        (re)provision the codespace
@@ -321,8 +327,9 @@ case "${1:-}" in
   resize) shift; cmd_resize "$@" ;;
   dashboard) shift; cmd_dashboard "$@" ;;
   sync) cmd_sync ;;
-  link) cmd_link ;;
+  link) shift; cmd_link "$@" ;;
   unlink) cmd_unlink ;;
+  key) cmd_key ;;
   save) cmd_save ;;
   env) cmd_env ;;
   setup) shift; bash "$HERE/setup.sh" "$@" ;;

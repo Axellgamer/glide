@@ -64,6 +64,12 @@
       "problemMatcher": []
     },
     {
+      "label": "Glide: Show sync key",
+      "type": "shell",
+      "command": "bash codespace/glide key",
+      "problemMatcher": []
+    },
+    {
       "label": "Glide: Unlink portable profile",
       "type": "shell",
       "command": "bash codespace/glide unlink",

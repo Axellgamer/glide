@@ -15,3 +15,6 @@ Thumbs.db
 
 # Cloudflare wrangler
 .wrangler/
+
+# Local profile cache (the canonical copy is the keyed KV store)
+.glide/

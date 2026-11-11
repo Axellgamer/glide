@@ -40,9 +40,9 @@ header() {
   printf '  Note       keep port 6080 private; open it from github.dev or a signed-in tab.\n'
   printf '  Files      use the Explorer in the left sidebar (Client/ and ~/.glide/minecraft).\n'
   if glide_profile_linked; then
-    printf '  Profile    portable store + fork (linked)\n'
+    printf '  Profile    portable store (linked)\n'
   else
-    printf '  Profile    fork only — use l to link across GitHub accounts.\n'
+    printf '  Profile    local only — l creates/uses a sync key.\n'
   fi
   printf '  %s\n\n' "────────────────────────────────────────────────────────"
   printf '  1  Start / restart session      6  Stream profile\n'
@@ -50,7 +50,8 @@ header() {
   printf '  3  Restart game                8  Tail a log\n'
   printf '  4  Restart stream              9  Open session.env\n'
   printf '  5  Switch installation         s  Save settings\n'
-  printf '  l  Link profile (switch accounts)   0  Quit\n\n'
+  printf '  l  Link / paste sync key             k  Show sync key\n'
+  printf '  0  Quit\n\n'
 }
 
 switch_installation() {
@@ -127,6 +128,7 @@ while true; do
     9) bash "$GLIDE" env ;;
     s | S) bash "$GLIDE" sync; pause ;;
     l | L) bash "$GLIDE" link; pause ;;
+    k | K) bash "$GLIDE" key; pause ;;
     q | Q | 0 | "") exit 0 ;;
     *) printf 'unknown choice\n' ;;
   esac
