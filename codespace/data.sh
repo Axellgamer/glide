@@ -11,7 +11,7 @@ glide_data_bundle() {
     [ -e "$GLIDE_MC/$item" ] && items+=("$item")
   done
   [ "${#items[@]}" -gt 0 ] || return 1
-  tar -C "$GLIDE_MC" -czf "$out" "${items[@]}" 2>/dev/null || return 1
+  tar -C "$GLIDE_MC" --exclude="*/session.lock" -czf "$out" "${items[@]}" 2>/dev/null || return 1
   printf '%s' "$out"
 }
 

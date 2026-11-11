@@ -144,3 +144,12 @@ The larger data now follows the same sync key:
   worlds are small; large worlds/modpacks need R2 (enable it in the Cloudflare dashboard)
   or a paid limit.
 - Nothing is committed to the fork and no GitHub token is used.
+
+
+### 9. Correction: the fork and passphrase text above is obsolete
+
+Current behaviour: no settings or data are written to the fork, and there is no
+passphrase. `glide link` generates (or accepts) a random 64-character sync key and the
+Cloudflare KV entry stores the profile, game settings and the chunked worlds/mods/packs
+archive. Use `glide key` to print the key and `glide link <key>` on another account.
+
