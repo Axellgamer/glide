@@ -153,3 +153,24 @@ No web frontend, no GitHub token, no GitHub Actions, no public port, no tunnel, 
 container outside the codespace, and no local install on the user's computer. The only
 external service is the small settings KV store for cross-account profiles.
 
+
+
+### 6. Game settings
+
+The small Minecraft settings also follow you, separately from the profile:
+
+- Included in a `.tar.gz`: `options.txt`, `optionsof.txt`, `optionshaders.txt`,
+  `servers.dat` and `config/`. **Not** included: worlds, resource packs, shader packs,
+  screenshots, logs or mods (those are repo/workspace files).
+- Stored in the same passphrase-keyed Cloudflare KV entry under `/v1/game/<key>`.
+- Pulled and extracted before every game launch; pushed after **Stop**, before a game
+  restart, and by `glide sync` / `glide save`.
+- Requires `glide link` (the same passphrase). Without linking, game settings stay in the
+  codespace only.
+- They are **not** committed to the fork, so server addresses and mod configs never land
+  in a public repository.
+
+So after switching a GitHub account: create the codespace, run **Glide: Link profile**
+with the same passphrase, and both the profile and the game settings come back. Restart
+the game once if it was already running when you linked.
+

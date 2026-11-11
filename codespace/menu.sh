@@ -49,7 +49,7 @@ header() {
   printf '  2  Stop session                7  Show status\n'
   printf '  3  Restart game                8  Tail a log\n'
   printf '  4  Restart stream              9  Open session.env\n'
-  printf '  5  Switch installation         s  Save profile\n'
+  printf '  5  Switch installation         s  Save settings\n'
   printf '  l  Link profile (switch accounts)   0  Quit\n\n'
 }
 

@@ -142,6 +142,18 @@ glide_profile_linked() {
 # Link this codespace/account to a passphrase-keyed portable profile. The
 # passphrase is not stored; only its derived key lives in ~/.glide/sync.key
 # (mode 600), so a different account can re-link with the same passphrase.
+glide_link_game() {
+  declare -F glide_game_pull >/dev/null 2>&1 || return 0
+  local rc
+  glide_game_pull
+  rc=$?
+  case "$rc" in
+    0) glide_log "game settings restored" ;;
+    2) glide_game_push ;;
+  esac
+  return 0
+}
+
 glide_profile_link() {
   if [ ! -t 0 ]; then
     glide_log "linking needs an interactive terminal"
@@ -172,11 +184,13 @@ glide_profile_link() {
     glide_profile_import
     glide_load_env >/dev/null 2>&1 || true
     glide_profile_sync "linked"
-    glide_log "profile linked; settings restored"
+    glide_link_game
+    glide_log "profile linked; settings restored (restart the game to apply)"
     return 0
   fi
   if [ "$rc" -eq 2 ]; then
     glide_profile_sync "initial link"
+    glide_link_game
     glide_log "profile linked; current settings uploaded"
     return 0
   fi

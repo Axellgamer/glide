@@ -292,7 +292,9 @@ start_game() {
   sync_assets
 
   # Stop the previous Minecraft first.
+  local was_running=0
   if glide_pid_alive "$GLIDE_RUN_DIR/minecraft.pid"; then
+    was_running=1
     kill -TERM "$(cat "$GLIDE_RUN_DIR/minecraft.pid")" >/dev/null 2>&1 || true
     sleep 2
   fi
@@ -304,6 +306,16 @@ start_game() {
     sleep 0.5
   done
   pkill -u "$(id -u)" -KILL -f "net.minecraft.client.main.Main" >/dev/null 2>&1 || true
+
+  # Save the options of the session we just stopped, then apply the latest
+  # portable settings before launching. Fresh codespaces pull, restarts
+  # push-then-pull (same content).
+  if [ "$was_running" = "1" ] && declare -F glide_game_push >/dev/null 2>&1; then
+    glide_game_push
+  fi
+  if declare -F glide_game_pull >/dev/null 2>&1; then
+    glide_game_pull || true
+  fi
 
   # Minecraft 1.17 was the first version that needed a newer-than-8 JVM.
   local java_home="$GLIDE_JRE/21" minor

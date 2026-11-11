@@ -234,3 +234,5 @@ glide_selkies_bin() {
 
 # shellcheck source=profile.sh
 . "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/profile.sh"
+# shellcheck source=game.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/game.sh"

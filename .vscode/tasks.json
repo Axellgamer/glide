@@ -52,7 +52,7 @@
       "problemMatcher": []
     },
     {
-      "label": "Glide: Save profile to GitHub",
+      "label": "Glide: Save profile + game settings",
       "type": "shell",
       "command": "bash codespace/glide sync",
       "problemMatcher": []

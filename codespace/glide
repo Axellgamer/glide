@@ -217,6 +217,7 @@ cmd_save() {
       cp -a "$GLIDE_MC/$item" "$dest/settings/$loader/" 2>/dev/null && saved=1
     fi
   done
+  glide_game_push
   if [ "$saved" = "1" ]; then
     glide_log "worlds and settings copied to Client/$version (commit them to keep them)"
   else
@@ -248,7 +249,8 @@ cmd_logs() {
 
 cmd_sync() {
   glide_profile_sync "manual save"
-  glide_log "profile synced"
+  glide_game_push
+  glide_log "profile and game settings synced"
 }
 
 cmd_link() {

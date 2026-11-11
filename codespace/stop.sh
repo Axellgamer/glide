@@ -37,6 +37,9 @@ for i in $(seq 1 20); do
   sleep 0.5
 done
 pkill -u "$(id -u)" -KILL -f "net.minecraft.client.main.Main" >/dev/null 2>&1 || true
+if declare -F glide_game_push >/dev/null 2>&1; then
+  glide_game_push
+fi
 
 # 2. Streaming stack.
 kill_pidfile selkies
