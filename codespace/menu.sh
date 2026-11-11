@@ -14,6 +14,12 @@ GLIDE="$HERE/glide"
 LOADERS=(vanilla fabric legacy-fabric forge legacy-forge quilt neoforge)
 HEAPS=(2G 3G 4G 6G 8G)
 
+# postAttachCommand can run without a TTY; do not spin a read loop there.
+if [ ! -t 0 ]; then
+  bash "$GLIDE" status
+  exit 0
+fi
+
 clear_screen() {
   if [ -t 1 ]; then printf '\033[2J\033[H'; fi
 }
