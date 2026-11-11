@@ -13,7 +13,8 @@
 #   glide profile low|medium|high
 #   glide resize 1280x720        restart the session at a resolution
 #   glide dashboard on|off       show/hide the Selkies sidebar
-#   glide save                   copy worlds/settings back into Client/
+#   glide sync                   save the profile to your fork
+  glide save                   copy worlds/settings back into Client/
 #   glide env                    edit ~/.glide/session.env
 #   glide setup [--force]        (re)provision the codespace
 set -uo pipefail
@@ -125,6 +126,7 @@ cmd_install() {
   glide_env_set GLIDE_MINECRAFT_VERSION "$version"
   glide_env_set GLIDE_MINECRAFT_LOADER "$loader"
   glide_env_set GLIDE_MINECRAFT_XMX "$heap"
+  glide_profile_sync "installation $version $loader"
   glide_state_stage restarting-game "Switching to $version ($loader)"
   glide_log "installation set to $version / $loader / $heap"
   boot_detached game
@@ -141,6 +143,7 @@ cmd_profile() {
       return 2
       ;;
   esac
+  glide_profile_sync "stream profile $preset"
   glide_log "stream profile set to $preset - restarting the stream"
   cmd_restart_stream
 }
@@ -172,6 +175,7 @@ cmd_resize() {
     return 2
   fi
   glide_env_set GLIDE_RESOLUTION "$value"
+  glide_profile_sync "resolution $value"
   glide_log "resolution set to $value - restarting the session"
   cmd_restart
 }
@@ -186,6 +190,7 @@ cmd_dashboard() {
       return 2
       ;;
   esac
+  glide_profile_sync "dashboard $mode"
   glide_log "stream dashboard: $mode"
   cmd_restart_stream
 }
@@ -234,6 +239,11 @@ cmd_logs() {
   tail -n "$limit" -F "$file"
 }
 
+cmd_sync() {
+  glide_profile_sync "manual save"
+  glide_log "profile synced"
+}
+
 cmd_env() {
   local editor="${EDITOR:-}"
   if [ -z "$editor" ]; then
@@ -243,6 +253,7 @@ cmd_env() {
     fi
   fi
   "$editor" "$GLIDE_SESSION_ENV"
+  glide_profile_sync "session.env edit"
   glide_log "saved $GLIDE_SESSION_ENV (run: glide restart-game)"
 }
 
@@ -263,6 +274,7 @@ glide - the Glide codespace session CLI
   glide profile low|medium|high
   glide resize 1280x720        restart the session at a resolution
   glide dashboard on|off       show/hide the Selkies sidebar
+  glide sync                   save the profile to your fork
   glide save                   copy worlds/settings back into Client/
   glide env                    edit ~/.glide/session.env
   glide setup [--force]        (re)provision the codespace
@@ -289,6 +301,7 @@ case "${1:-}" in
   profile) shift; cmd_profile "$@" ;;
   resize) shift; cmd_resize "$@" ;;
   dashboard) shift; cmd_dashboard "$@" ;;
+  sync) cmd_sync ;;
   save) cmd_save ;;
   env) cmd_env ;;
   setup) shift; bash "$HERE/setup.sh" "$@" ;;

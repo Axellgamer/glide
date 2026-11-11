@@ -14,12 +14,6 @@ GLIDE="$HERE/glide"
 LOADERS=(vanilla fabric legacy-fabric forge legacy-forge quilt neoforge)
 HEAPS=(2G 3G 4G 6G 8G)
 
-# postAttachCommand can run without a TTY; do not spin a read loop there.
-if [ ! -t 0 ]; then
-  bash "$GLIDE" status
-  exit 0
-fi
-
 clear_screen() {
   if [ -t 1 ]; then printf '\033[2J\033[H'; fi
 }
@@ -45,12 +39,14 @@ header() {
   printf '  Stream     %s\n' "$(glide_public_url)"
   printf '  Note       keep port 6080 private; open it from github.dev or a signed-in tab.\n'
   printf '  Files      use the Explorer in the left sidebar (Client/ and ~/.glide/minecraft).\n'
+  printf '  Profile    .glide/profile.env — synced to your fork (settings survive new codespaces).\n'
   printf '  %s\n\n' "────────────────────────────────────────────────────────"
   printf '  1  Start / restart session      6  Stream profile\n'
   printf '  2  Stop session                7  Show status\n'
   printf '  3  Restart game                8  Tail a log\n'
   printf '  4  Restart stream              9  Open session.env\n'
-  printf '  5  Switch installation         q  Quit\n\n'
+  printf '  5  Switch installation         s  Save profile to GitHub\n'
+  printf '  0  Quit\n\n'
 }
 
 switch_installation() {
@@ -125,7 +121,8 @@ while true; do
     7) bash "$GLIDE" status; pause ;;
     8) tail_log; pause ;;
     9) bash "$GLIDE" env ;;
-    q | Q | "") exit 0 ;;
+    s | S) bash "$GLIDE" sync; pause ;;
+    q | Q | 0 | "") exit 0 ;;
     *) printf 'unknown choice\n' ;;
   esac
 done

@@ -5,8 +5,14 @@
       "label": "Glide: Menu",
       "type": "shell",
       "command": "bash codespace/menu.sh",
-      "group": { "kind": "build", "isDefault": true },
-      "presentation": { "reveal": "always", "panel": "dedicated" },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -43,6 +49,18 @@
       "label": "Glide: Status / stream URL",
       "type": "shell",
       "command": "bash codespace/glide status",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Save profile to GitHub",
+      "type": "shell",
+      "command": "bash codespace/glide sync",
+      "problemMatcher": []
+    },
+    {
+      "label": "Glide: Edit profile (.glide/profile.env)",
+      "type": "shell",
+      "command": "code -r .glide/profile.env",
       "problemMatcher": []
     },
     {
@@ -87,21 +105,39 @@
       "id": "mcLoader",
       "type": "pickString",
       "description": "Loader",
-      "options": ["fabric", "vanilla", "forge", "quilt", "neoforge", "legacy-fabric", "legacy-forge"],
+      "options": [
+        "fabric",
+        "vanilla",
+        "forge",
+        "quilt",
+        "neoforge",
+        "legacy-fabric",
+        "legacy-forge"
+      ],
       "default": "fabric"
     },
     {
       "id": "mcHeap",
       "type": "pickString",
       "description": "Heap",
-      "options": ["2G", "3G", "4G", "6G", "8G"],
+      "options": [
+        "2G",
+        "3G",
+        "4G",
+        "6G",
+        "8G"
+      ],
       "default": "4G"
     },
     {
       "id": "profile",
       "type": "pickString",
       "description": "Stream profile",
-      "options": ["low", "medium", "high"],
+      "options": [
+        "low",
+        "medium",
+        "high"
+      ],
       "default": "medium"
     }
   ]

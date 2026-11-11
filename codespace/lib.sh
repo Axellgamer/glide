@@ -113,6 +113,12 @@ EOF
 glide_load_env() {
   glide_ensure_dirs
   glide_write_defaults
+  # The repository copy of .glide/profile.env is the durable store: it is
+  # applied before the local session env, so a new codespace starts with the
+  # user's last settings. Local-only keys (Selkies password) are preserved.
+  if declare -F glide_profile_import >/dev/null 2>&1; then
+    glide_profile_import
+  fi
   # shellcheck disable=SC1090
   . "$GLIDE_SESSION_ENV"
   : "${GLIDE_MINECRAFT_VERSION:=$GLIDE_DEFAULTS_VERSION}"
@@ -150,7 +156,6 @@ glide_load_env() {
 glide_env_set() {
   # glide_env_set KEY VALUE  (rewrites in place, keeps the file tidy)
   local key="$1" value="$2" tmp="$GLIDE_SESSION_ENV.tmp"
-  glide_load_env >/dev/null 2>&1 || true
   if grep -q "^${key}=" "$GLIDE_SESSION_ENV" 2>/dev/null; then
     awk -v k="$key" -v v="$value" 'BEGIN{FS=OFS="="} $1==k{print k"="v; next} {print}' \
       "$GLIDE_SESSION_ENV" >"$tmp" && mv "$tmp" "$GLIDE_SESSION_ENV"
@@ -226,3 +231,6 @@ glide_selkies_bin() {
 }
 
 
+
+# shellcheck source=profile.sh
+. "$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)/profile.sh"
