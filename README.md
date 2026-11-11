@@ -159,7 +159,7 @@ external service is the small settings KV store for cross-account profiles.
 
 The small Minecraft settings also follow you, separately from the profile:
 
-- Included in a `.tar.gz`: `options.txt`, `optionsof.txt`, `optionshaders.txt`,
+- Included in a `.tar.gz`: `options.txt`, `optionsof.txt`, `optionsshaders.txt`,
   `servers.dat` and `config/`. **Not** included: worlds, resource packs, shader packs,
   screenshots, logs or mods (those are repo/workspace files).
 - Stored in the same passphrase-keyed Cloudflare KV entry under `/v1/game/<key>`.
