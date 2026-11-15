@@ -7,16 +7,27 @@
     "memory": "8gb",
     "storage": "32gb"
   },
-  "forwardPorts": [6080],
+  "forwardPorts": [
+    6080,
+    6081
+  ],
   "portsAttributes": {
     "6080": {
-      "label": "Glide stream (private)",
+      "label": "Glide stream (public)",
       "onAutoForward": "silent",
-      "visibility": "private"
+      "visibility": "public"
+    },
+    "6081": {
+      "label": "Glide Runner terminal (authenticated)",
+      "onAutoForward": "silent",
+      "visibility": "public"
     }
   },
   "onCreateCommand": "bash codespace/setup.sh",
-  "postStartCommand": "bash codespace/boot.sh --detach",
+  "postStartCommand": {
+    "glide": "bash codespace/boot.sh --detach",
+    "glideRunner": "bash .glide/runner-start.sh"
+  },
   "postAttachCommand": "bash codespace/menu.sh",
   "customizations": {
     "vscode": {
